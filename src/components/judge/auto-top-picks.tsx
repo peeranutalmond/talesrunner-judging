@@ -17,7 +17,7 @@ export function AutoTopPicks({ queue, categories, judgeName }: AutoTopPicksProps
   }, [categories]);
 
   const [activeCategorySlug, setActiveCategorySlug] = useState<string>(
-    actualCategories[0]?.slug ?? "digital"
+    actualCategories.find((c) => c.slug === "digital")?.slug ?? actualCategories[0]?.slug ?? "digital"
   );
 
   const [previewImage, setPreviewImage] = useState<{

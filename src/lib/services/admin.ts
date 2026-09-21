@@ -294,7 +294,10 @@ export type JudgesChoiceAnalysis = {
 export async function getJudgesChoiceAnalysis(contestId: string): Promise<JudgesChoiceAnalysis> {
   const [categories, judgeUsers, rawScores] = await Promise.all([
     query<{ id: string; name: string; slug: string; icon: string | null; color: string | null }>(
-      `SELECT id, name, slug, icon, color FROM submission_categories WHERE contest_id = $1 ORDER BY display_order`,
+      `SELECT id, name, slug, icon, color 
+       FROM submission_categories 
+       WHERE contest_id = $1 
+       ORDER BY CASE WHEN slug = 'digital' THEN 1 WHEN slug = 'traditional' THEN 2 ELSE 3 END, display_order ASC`,
       [contestId]
     ),
     query<{ id: string; name: string; avatar_color: string; avatar_url: string | null }>(

@@ -12,9 +12,9 @@ interface JudgesChoiceShowcaseProps {
 export function JudgesChoiceShowcase({ data }: JudgesChoiceShowcaseProps) {
   const { judges, categories, judgeTop5, intersections } = data;
 
-  // Active Category (default to first category, e.g. digital)
+  // Active Category (default to digital if available, otherwise first category)
   const [activeCategorySlug, setActiveCategorySlug] = useState<string>(
-    categories[0]?.slug ?? "digital"
+    categories.find((c) => c.slug === "digital")?.slug ?? categories[0]?.slug ?? "digital"
   );
 
   // Active Judge (default to first judge)
