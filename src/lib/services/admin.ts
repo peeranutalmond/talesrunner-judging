@@ -234,18 +234,227 @@ export type AdminJudgeTopPickRow = {
   note: string;
 };
 
-export async function getAllJudgeTopPicks(contestId: string): Promise<AdminJudgeTopPickRow[]> {
-  return query<AdminJudgeTopPickRow>(
-    `SELECT u.id AS judge_id, u.name AS judge_name, u.avatar_url, u.avatar_color,
-            s.id AS submission_id, s.submission_number, s.artwork_title, s.image_url, s.thumbnail_url,
-            cat.name AS category_name, cat.icon AS category_icon,
-            p.rank_order, p.note
-     FROM judge_top_picks p
-     JOIN users u ON u.id = p.judge_id
-     JOIN submissions s ON s.id = p.submission_id
-     LEFT JOIN submission_categories cat ON cat.id = s.category_id
-     WHERE p.contest_id = $1
-     ORDER BY u.name ASC, p.rank_order ASC`,
-    [contestId]
-  );
+export type JudgeScoredItem = {
+  submission_id: string;
+  submission_number: string;
+  artwork_title: string;
+  display_name: string;
+  image_url: string;
+  thumbnail_url: string | null;
+  category_id: string | null;
+  category_name: string | null;
+  category_slug: string | null;
+  total_score: number;
+  rank_order: number;
+};
+
+export type IntersectionJudgeVote = {
+  judge_id: string;
+  judge_name: string;
+  avatar_color: string;
+  avatar_url: string | null;
+  score: number;
+  rank_order: number;
+};
+
+export type IntersectionItem = {
+  submission_id: string;
+  submission_number: string;
+  artwork_title: string;
+  display_name: string;
+  image_url: string;
+  thumbnail_url: string | null;
+  category_id: string | null;
+  category_name: string | null;
+  category_slug: string | null;
+  intersect_count: number;
+  total_judges: number;
+  avg_score: number;
+  judges: IntersectionJudgeVote[];
+};
+
+export type JudgesChoiceAnalysis = {
+  judges: Array<{
+    id: string;
+    name: string;
+    avatar_color: string;
+    avatar_url: string | null;
+  }>;
+  categories: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    icon: string | null;
+    color: string | null;
+  }>;
+  judgeTop5: Record<string, Record<string, JudgeScoredItem[]>>;
+  intersections: Record<string, IntersectionItem[]>;
+};
+
+export async function getJudgesChoiceAnalysis(contestId: string): Promise<JudgesChoiceAnalysis> {
+  const [categories, judgeUsers, rawScores] = await Promise.all([
+    query<{ id: string; name: string; slug: string; icon: string | null; color: string | null }>(
+      `SELECT id, name, slug, icon, color FROM submission_categories WHERE contest_id = $1 ORDER BY display_order`,
+      [contestId]
+    ),
+    query<{ id: string; name: string; avatar_color: string; avatar_url: string | null }>(
+      `SELECT u.id, u.name, u.avatar_color, u.avatar_url
+       FROM users u
+       JOIN contest_judges cj ON cj.user_id = u.id
+       WHERE cj.contest_id = $1 AND u.role = 'JUDGE' AND cj.status = 'ACTIVE'
+       ORDER BY u.name ASC`,
+      [contestId]
+    ),
+    query<{
+      judge_id: string;
+      judge_name: string;
+      avatar_url: string | null;
+      avatar_color: string;
+      submission_id: string;
+      submission_number: string;
+      artwork_title: string;
+      display_name: string;
+      image_url: string;
+      thumbnail_url: string | null;
+      category_id: string | null;
+      category_name: string | null;
+      category_slug: string | null;
+      total_score: number;
+    }>(
+      `SELECT u.id AS judge_id, u.name AS judge_name, u.avatar_url, u.avatar_color,
+              s.id AS submission_id, s.submission_number, s.artwork_title, s.display_name,
+              s.image_url, s.thumbnail_url,
+              cat.id AS category_id, cat.name AS category_name, cat.slug AS category_slug,
+              SUM(sc.score)::float8 AS total_score
+       FROM scores sc
+       JOIN users u ON u.id = sc.judge_id
+       JOIN submissions s ON s.id = sc.submission_id
+       LEFT JOIN submission_categories cat ON cat.id = s.category_id
+       WHERE sc.contest_id = $1 AND sc.is_active = TRUE
+         AND sc.criteria_version_id = (SELECT active_criteria_version_id FROM contests WHERE id = $1)
+         AND u.role = 'JUDGE'
+       GROUP BY u.id, u.name, u.avatar_url, u.avatar_color, s.id, s.submission_number, s.artwork_title, s.display_name, s.image_url, s.thumbnail_url, cat.id, cat.name, cat.slug
+       ORDER BY u.name ASC, total_score DESC`,
+      [contestId]
+    ),
+  ]);
+
+  const totalJudges = judgeUsers.length;
+  const judgeTop5: Record<string, Record<string, JudgeScoredItem[]>> = {};
+  const catSlugList = categories.map((c) => c.slug);
+
+  // Initialize data structures
+  for (const j of judgeUsers) {
+    judgeTop5[j.id] = {};
+    for (const slug of catSlugList) {
+      judgeTop5[j.id][slug] = [];
+    }
+  }
+
+  // Populate judgeTop5
+  for (const j of judgeUsers) {
+    for (const cat of categories) {
+      const jCatScores = rawScores.filter(
+        (s) => s.judge_id === j.id && (s.category_slug === cat.slug || s.category_id === cat.id)
+      );
+      const sorted = [...jCatScores].sort((a, b) => b.total_score - a.total_score);
+      judgeTop5[j.id][cat.slug] = sorted.slice(0, 5).map((item, idx) => ({
+        submission_id: item.submission_id,
+        submission_number: item.submission_number,
+        artwork_title: item.artwork_title,
+        display_name: item.display_name,
+        image_url: item.image_url,
+        thumbnail_url: item.thumbnail_url,
+        category_id: item.category_id,
+        category_name: item.category_name,
+        category_slug: item.category_slug,
+        total_score: item.total_score,
+        rank_order: idx + 1,
+      }));
+    }
+  }
+
+  // Compute intersections per category
+  const intersections: Record<string, IntersectionItem[]> = {};
+
+  for (const cat of categories) {
+    const countsMap = new Map<
+      string,
+      {
+        submission: {
+          submission_id: string;
+          submission_number: string;
+          artwork_title: string;
+          display_name: string;
+          image_url: string;
+          thumbnail_url: string | null;
+          category_id: string | null;
+          category_name: string | null;
+          category_slug: string | null;
+        };
+        judges: IntersectionJudgeVote[];
+      }
+    >();
+
+    for (const j of judgeUsers) {
+      const top5List = judgeTop5[j.id]?.[cat.slug] ?? [];
+      for (const item of top5List) {
+        if (!countsMap.has(item.submission_id)) {
+          countsMap.set(item.submission_id, {
+            submission: {
+              submission_id: item.submission_id,
+              submission_number: item.submission_number,
+              artwork_title: item.artwork_title,
+              display_name: item.display_name,
+              image_url: item.image_url,
+              thumbnail_url: item.thumbnail_url,
+              category_id: item.category_id,
+              category_name: item.category_name,
+              category_slug: item.category_slug,
+            },
+            judges: [],
+          });
+        }
+        const entry = countsMap.get(item.submission_id)!;
+        entry.judges.push({
+          judge_id: j.id,
+          judge_name: j.name,
+          avatar_color: j.avatar_color,
+          avatar_url: j.avatar_url,
+          score: item.total_score,
+          rank_order: item.rank_order,
+        });
+      }
+    }
+
+    const items: IntersectionItem[] = [...countsMap.values()].map((entry) => {
+      const avgScore =
+        entry.judges.length > 0
+          ? entry.judges.reduce((acc, v) => acc + v.score, 0) / entry.judges.length
+          : 0;
+      return {
+        ...entry.submission,
+        intersect_count: entry.judges.length,
+        total_judges: totalJudges,
+        avg_score: avgScore,
+        judges: entry.judges.sort((a, b) => b.score - a.score),
+      };
+    });
+
+    items.sort((a, b) => {
+      if (b.intersect_count !== a.intersect_count) {
+        return b.intersect_count - a.intersect_count;
+      }
+      return b.avg_score - a.avg_score;
+    });
+
+    intersections[cat.slug] = items;
+  }
+
+  return {
+    judges: judgeUsers,
+    categories,
+    judgeTop5,
+    intersections,
+  };
 }

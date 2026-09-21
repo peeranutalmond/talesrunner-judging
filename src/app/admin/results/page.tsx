@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { AlertTriangle, Lock, Sparkles, Trophy, Unlock } from "lucide-react";
 import { requireSession } from "@/lib/auth/session";
-import { getAllJudgeTopPicks, getRanking } from "@/lib/services/admin";
+import { getJudgesChoiceAnalysis, getRanking } from "@/lib/services/admin";
 import { createSnapshotAction, lockResultsAction } from "@/lib/services/admin-actions";
 import { LiveRefresh } from "@/components/admin/live-refresh";
+import { JudgesChoiceShowcase } from "@/components/admin/judges-choice-showcase";
 import { Badge, Button, Card, Input } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
 export default async function ResultsPage() {
   const session = await requireSession(["ADMIN", "SUPER_ADMIN"]);
-  const [rankingData, judgeTopPicks] = await Promise.all([
+  const [rankingData, judgesChoiceData] = await Promise.all([
     getRanking(session.contestId!),
-    getAllJudgeTopPicks(session.contestId!),
+    getJudgesChoiceAnalysis(session.contestId!),
   ]);
   const { contest, rows } = rankingData;
   const incomplete = rows.filter((row) => !row.complete).length;
@@ -21,11 +22,6 @@ export default async function ResultsPage() {
   for (const row of rows) {
     const key = row.categoryId ?? "uncategorized";
     groups.set(key, [...(groups.get(key) ?? []), row]);
-  }
-
-  const picksByJudge = new Map<string, typeof judgeTopPicks>();
-  for (const pick of judgeTopPicks) {
-    picksByJudge.set(pick.judge_name, [...(picksByJudge.get(pick.judge_name) ?? []), pick]);
   }
 
   return (
@@ -288,81 +284,8 @@ export default async function ResultsPage() {
               );
             })}
 
-            {/* Judges' Choice / Top Picks Section */}
-            {picksByJudge.size > 0 && (
-              <div className="comic-card bg-white p-5 space-y-5">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-slate-900 bg-amber-400 text-slate-950 shadow-[2px_2px_0_#0f172a]">
-                    <Sparkles size={20} />
-                  </div>
-                  <div>
-                    <h2 className="font-rowdies text-2xl font-black text-slate-950">
-                      ⭐ รางวัลขวัญใจกรรมการ (Judges&apos; Choice Awards)
-                    </h2>
-                    <p className="text-xs font-bold text-slate-500">
-                      ผลงานที่กรรมการแต่ละท่านติ๊กเลือกเป็น Top Picks (3 - 5 อันดับที่ชื่นชอบที่สุด)
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid gap-4">
-                  {[...picksByJudge.entries()].map(([judgeName, picks]) => (
-                    <div
-                      key={judgeName}
-                      className="rounded-2xl border-2 border-slate-900 bg-amber-50/40 p-4 space-y-3"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-rowdies rounded-lg border border-slate-900 bg-sky-400 px-2.5 py-1 text-xs font-black text-slate-950 shadow-sm">
-                          กรรมการ: {judgeName}
-                        </span>
-                        <span className="text-xs font-bold text-slate-600">
-                          เลือก {picks.length} ผลงาน
-                        </span>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                        {picks.map((pick) => {
-                          const medals = ["🥇", "🥈", "🥉", "⭐", "⭐"];
-                          const medal = medals[pick.rank_order - 1] ?? "⭐";
-                          return (
-                            <div
-                              key={pick.submission_id}
-                              className="comic-card flex flex-col justify-between p-2.5 bg-white overflow-hidden"
-                            >
-                              <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                  <span className="inline-flex items-center gap-1 rounded-md border border-slate-900 bg-amber-300 px-1.5 py-0.2 text-[11px] font-black text-slate-950">
-                                    <span>{medal}</span>
-                                    <span>อันดับ {pick.rank_order}</span>
-                                  </span>
-                                  <span className="font-rowdies text-[11px] font-black text-sky-700">
-                                    #{pick.submission_number}
-                                  </span>
-                                </div>
-                                <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-900 bg-slate-950 mb-1.5">
-                                  <img
-                                    src={pick.thumbnail_url || pick.image_url}
-                                    alt={pick.artwork_title}
-                                    referrerPolicy="no-referrer"
-                                    className="h-full w-full object-cover"
-                                  />
-                                </div>
-                                <h4
-                                  className="font-rowdies truncate text-xs font-black text-slate-900"
-                                  title={pick.artwork_title}
-                                >
-                                  {pick.artwork_title}
-                                </h4>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Judges' Choice & Consensus Intersection Showcase */}
+            <JudgesChoiceShowcase data={judgesChoiceData} />
           </div>
 
           {/* Right Sidebar: Snapshots & Locking */}

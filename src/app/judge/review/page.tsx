@@ -3,7 +3,7 @@ import { logoutAction } from "@/lib/auth/actions";
 import { requireSession } from "@/lib/auth/session";
 import { getContest, getJudgeCategoryStats, getJudgeQueue, getJudgeTopPicks } from "@/lib/services/judging";
 import { Badge, Button, Progress } from "@/components/ui";
-import { FinalTopPicks } from "@/components/judge/final-top-picks";
+import { AutoTopPicks } from "@/components/judge/auto-top-picks";
 
 export const dynamic = "force-dynamic";
 
@@ -170,12 +170,7 @@ export default async function ReviewPage({
             }`}
           >
             <Star size={16} className="text-amber-500 fill-amber-400" />
-            <span>⭐ จัดอันดับ &amp; ติ๊กเลือก Top Picks (3-5 อัน)</span>
-            {initialTopPicks.length > 0 && (
-              <span className="rounded-full bg-slate-900 text-amber-300 px-2 py-0.5 text-[11px] font-black">
-                {initialTopPicks.length} อัน
-              </span>
-            )}
+            <span>⭐ สรุป 5 อันดับแรกของคุณ (Top 5)</span>
           </a>
           <a
             href={`/judge/review?tab=scores${catQuery}`}
@@ -191,14 +186,10 @@ export default async function ReviewPage({
 
         {activeTab === "top-picks" ? (
           <div className="mt-6">
-            <FinalTopPicks
-              contestId={session.contestId!}
-              judgeId={session.id}
-              judgeName={session.name}
+            <AutoTopPicks
               queue={queue}
               categories={categories}
-              initialTopPicks={initialTopPicks}
-              contest={contest!}
+              judgeName={session.name}
             />
           </div>
         ) : (
