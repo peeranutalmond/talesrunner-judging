@@ -1,0 +1,2 @@
+import { CsvImporter } from "@/components/admin/csv-importer";
+export default function ImportPage(){return <main className="p-4 sm:p-7 lg:p-9"><div className="mx-auto max-w-6xl"><p className="text-sm font-black uppercase tracking-[.16em] text-sky-600">Google Forms import</p><h1 className="mt-1 text-3xl font-black">นำเข้าผลงานและลิงก์ Drive</h1><p className="mt-2 text-slate-500">ดาวน์โหลดคำตอบ Google Forms เป็น CSV แล้วจับคู่คอลัมน์ ระบบจะแปลงลิงก์ Drive และจัดเข้าหมวดให้อัตโนมัติ</p><div className="mt-6"><CsvImporter/></div></div></main>}

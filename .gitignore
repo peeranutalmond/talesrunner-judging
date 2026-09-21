@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+data/
+public/uploads/
+.codex_tmp_read_xlsx/
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*

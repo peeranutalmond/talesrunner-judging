@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายการไฟล์ Google Drive สำหรับดาวน์โหลด - Tales Artventure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700;900&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Prompt', sans-serif; background-color: #f0f9ff; }
+    h1, h2, h3, .heading-font { font-family: 'Kanit', sans-serif; }
+    .comic-card { border: 2px solid #0f172a; box-shadow: 4px 4px 0 #0f172a; border-radius: 1rem; }
+    .arcade-btn { border: 2px solid #0f172a; box-shadow: 2px 2px 0 #0f172a; transition: all 0.15s ease; }
+    .arcade-btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 #0f172a; }
+    .arcade-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 #0f172a; }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 p-4 sm:p-6 lg:p-10">
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Top Navigation / Brand -->
+    <div class="flex flex-wrap items-center justify-between gap-4 bg-white p-4 comic-card">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">📁</span>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black text-slate-900 leading-tight">คลังไฟล์ Google Drive ทุกลำดับ</h1>
+          <p class="text-xs text-slate-500">Tales Artventure : Animal Village with Friends (รวม 69 ชิ้นงาน)</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="/drive_files_list.csv" download="drive_files_list.csv" class="arcade-btn inline-flex items-center gap-1.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold">
+          📥 ดาวน์โหลด CSV (Excel)
+        </a>
+        <button onclick="copyAllLinks()" id="btnCopyAll" class="arcade-btn inline-flex items-center gap-1.5 bg-sky-400 hover:bg-sky-300 text-slate-950 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold">
+          📋 คัดลอกทุกลิงก์ (69 Links)
+        </button>
+        <a href="/judge" class="arcade-btn inline-flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold">
+          🎮 ไปห้องตัดสิน
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick How-To Card -->
+    <div class="bg-white p-5 comic-card border-l-8 border-l-sky-500 space-y-3">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">💡</span>
+        <h2 class="text-lg font-bold text-slate-900">วิธีดาวน์โหลดรูปภาพมาใส่ในระบบ (3 ขั้นตอนง่ายๆ)</h2>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-3 text-xs sm:text-sm text-slate-600">
+        <div class="p-3 bg-sky-50 rounded-xl border border-sky-200">
+          <strong class="text-sky-900 block text-sm font-bold mb-1">1. โหลดภาพจาก Drive</strong>
+          กดปุ่ม <strong>"เปิด Google Drive ↗"</strong> ที่แถวผลงานที่ต้องการ แล้วดาวน์โหลดรูปภาพลงเครื่องคอมพิวเตอร์ของคุณ
+        </div>
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+          <strong class="text-amber-900 block text-sm font-bold mb-1">2. ตั้งชื่อตามหมายเลข</strong>
+          ตั้งชื่อไฟล์ภาพให้ตรงกับหมายเลขผลงาน เช่น <code class="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border">008.png</code> หรือ <code class="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border">008.jpg</code>
+        </div>
+        <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+          <strong class="text-emerald-900 block text-sm font-bold mb-1">3. วางลงโฟลเดอร์ artworks</strong>
+          นำไฟล์ไปวางในโฟลเดอร์:<br>
+          <code class="font-mono text-[11px] font-bold text-emerald-800 bg-white px-1.5 py-0.5 rounded border block mt-1 break-all">public/artworks/</code>
+          แล้วรันคำสั่ง: <code class="font-bold text-slate-900 bg-white px-1 rounded">node scripts/sync-local-artworks.mjs</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="bg-white p-4 comic-card space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex-1 min-w-[240px]">
+          <input type="text" id="searchInput" oninput="applyFilters()" placeholder="🔍 ค้นหาหมายเลข, ชื่อภาพ, นามปากกา, ไอดีเกม..." 
+                 class="w-full px-4 py-2 text-sm border-2 border-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400 font-medium">
+        </div>
+        <div class="flex flex-wrap gap-1.5 text-xs font-bold" id="filterTabs">
+          <button onclick="setFilter('real')" id="tab-real" class="filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-sky-400 text-slate-950 arcade-btn">
+            ✨ ผลงานจริง (#008 - #069 : 62 ชิ้น)
+          </button>
+          <button onclick="setFilter('all')" id="tab-all" class="filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-slate-100 text-slate-700 arcade-btn">
+            🏁 ทั้งหมด (69 ชิ้น)
+          </button>
+          <button onclick="setFilter('digital')" id="tab-digital" class="filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-slate-100 text-slate-700 arcade-btn">
+            🖥️ Digital Art (53)
+          </button>
+          <button onclick="setFilter('traditional')" id="tab-traditional" class="filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-slate-100 text-slate-700 arcade-btn">
+            ✏️ Traditional Art (16)
+          </button>
+        </div>
+      </div>
+      <div class="flex items-center justify-between text-xs text-slate-500 font-medium pt-1 border-t border-slate-100">
+        <span id="resultCount">แสดงทั้งหมด 69 รายการ</span>
+        <span>คลิกที่ปุ่มคัดลอก เพื่อก๊อปปี้ชื่อไฟล์หรือลิงก์ได้ทันที</span>
+      </div>
+    </div>
+
+    <!-- Table of Submissions -->
+    <div class="bg-white comic-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm" id="filesTable">
+          <thead class="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider">
+            <tr>
+              <th class="p-3 text-center w-16">#</th>
+              <th class="p-3">ชื่อผลงาน & สายการประกวด</th>
+              <th class="p-3">ศิลปิน / นามปากกา</th>
+              <th class="p-3">ไอดีเกม / UID</th>
+              <th class="p-3 text-center">ชื่อไฟล์ที่แนะนำ</th>
+              <th class="p-3 text-right">ลิงก์ Google Drive</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200" id="tableBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const ITEMS = [{"index":1,"submissionNumber":"001","title":"BlabBlabBlabBlab","penName":"AmongAmily","trUser":"AmongAmily","uid":"123456","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1zjrSrQoj3-mUNCRZXzF_TAm_HTj-t4NV","fileId":"1zjrSrQoj3-mUNCRZXzF_TAm_HTj-t4NV","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1zjrSrQoj3-mUNCRZXzF_TAm_HTj-t4NV","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1zjrSrQoj3-mUNCRZXzF_TAm_HTj-t4NV&sz=w1600"},{"index":2,"submissionNumber":"002","title":"ติ้วแล้ว","penName":"อุอิอิอ","trUser":"Kwenvine","uid":"183737373","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1Kc6p3zAEuC_lXj26Shq_Ixk-DBttz6RL","fileId":"1Kc6p3zAEuC_lXj26Shq_Ixk-DBttz6RL","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1Kc6p3zAEuC_lXj26Shq_Ixk-DBttz6RL","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1Kc6p3zAEuC_lXj26Shq_Ixk-DBttz6RL&sz=w1600"},{"index":3,"submissionNumber":"003","title":"test","penName":"yx3","trUser":"123456","uid":"123456","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1CJRx1mZhpzgK0nT84df14qFkAnwiaPVt","fileId":"1CJRx1mZhpzgK0nT84df14qFkAnwiaPVt","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1CJRx1mZhpzgK0nT84df14qFkAnwiaPVt","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1CJRx1mZhpzgK0nT84df14qFkAnwiaPVt&sz=w1600"},{"index":4,"submissionNumber":"004","title":"หีเม็ดควยแตด","penName":"โคตรเม็ด","trUser":"เริศเลอ","uid":"123456","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1LNmWuyn73XKwiYydTxCB_3Sn5-noQPxo","fileId":"1LNmWuyn73XKwiYydTxCB_3Sn5-noQPxo","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1LNmWuyn73XKwiYydTxCB_3Sn5-noQPxo","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1LNmWuyn73XKwiYydTxCB_3Sn5-noQPxo&sz=w1600"},{"index":5,"submissionNumber":"005","title":"eieipudding","penName":"กฟหกหฟกห","trUser":"ฟกฟหกฟหก","uid":"153915","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1LmBSBNevDEsdP_861uX0-mHXanrqhGyg","fileId":"1LmBSBNevDEsdP_861uX0-mHXanrqhGyg","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1LmBSBNevDEsdP_861uX0-mHXanrqhGyg","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1LmBSBNevDEsdP_861uX0-mHXanrqhGyg&sz=w1600"},{"index":6,"submissionNumber":"006","title":"OungOung","penName":"OungOung","trUser":"OungOung","uid":"OungOung","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1fDYX7frT7KPig27m8rANsLbVOOc-qeRh","fileId":"1fDYX7frT7KPig27m8rANsLbVOOc-qeRh","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1fDYX7frT7KPig27m8rANsLbVOOc-qeRh","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1fDYX7frT7KPig27m8rANsLbVOOc-qeRh&sz=w1600"},{"index":7,"submissionNumber":"007","title":"eiei","penName":"am","trUser":"ad1345","uid":"123456","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1LVxgRt3XeI_4-gncFqU8ZNwQWe962IKA","fileId":"1LVxgRt3XeI_4-gncFqU8ZNwQWe962IKA","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1LVxgRt3XeI_4-gncFqU8ZNwQWe962IKA","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1LVxgRt3XeI_4-gncFqU8ZNwQWe962IKA&sz=w1600"},{"index":8,"submissionNumber":"008","title":"จ๊าบกับโรโรโรอาอยู่ใต้ต้นไม้","penName":"SBH Baha","trUser":"sbh13858","uid":"335WJE","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1ieVqMOaY9Ym04Xj3A78pVKB5z5W_Ft1j","fileId":"1ieVqMOaY9Ym04Xj3A78pVKB5z5W_Ft1j","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1ieVqMOaY9Ym04Xj3A78pVKB5z5W_Ft1j","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1ieVqMOaY9Ym04Xj3A78pVKB5z5W_Ft1j&sz=w1600"},{"index":9,"submissionNumber":"009","title":"เป่ายิ้งฉุบ","penName":"พี่อาร์ม","trUser":"armsg2542","uid":"SJ097Y","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=14rFk6RHm-rwQoxM27nGafC9IoVYHuW9O","fileId":"14rFk6RHm-rwQoxM27nGafC9IoVYHuW9O","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=14rFk6RHm-rwQoxM27nGafC9IoVYHuW9O","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=14rFk6RHm-rwQoxM27nGafC9IoVYHuW9O&sz=w1600"},{"index":10,"submissionNumber":"010","title":"ผมจ๊าบ และนี่คือเพื่อนของจ๊าบชื่อซิด ...และเพื่อนของซิด(?)ชื่อ ชิโอเนล","penName":"Louwin","trUser":"louwinklein14","uid":"1MI55P","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1mP8B4vQdzOxadM0ZjN0GNIDvCNA2621x","fileId":"1mP8B4vQdzOxadM0ZjN0GNIDvCNA2621x","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1mP8B4vQdzOxadM0ZjN0GNIDvCNA2621x","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1mP8B4vQdzOxadM0ZjN0GNIDvCNA2621x&sz=w1600"},{"index":11,"submissionNumber":"011","title":"Jab with Tea time","penName":"chitori","trUser":"ch1tori","uid":"W07K6H","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=14EFJcFfJ3pUV-qO-knFW-xNkwXPbexEp","fileId":"14EFJcFfJ3pUV-qO-knFW-xNkwXPbexEp","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=14EFJcFfJ3pUV-qO-knFW-xNkwXPbexEp","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=14EFJcFfJ3pUV-qO-knFW-xNkwXPbexEp&sz=w1600"},{"index":12,"submissionNumber":"012","title":"วันที่วุ่นวายแต่ก็สนุกสุดๆไปเลย","penName":"CODE009","trUser":"mauhokl2","uid":"Z6G9B8","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1T9qCJZ-wgp-bvdWTpgGlhPKJ5DRL-SG5","fileId":"1T9qCJZ-wgp-bvdWTpgGlhPKJ5DRL-SG5","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1T9qCJZ-wgp-bvdWTpgGlhPKJ5DRL-SG5","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1T9qCJZ-wgp-bvdWTpgGlhPKJ5DRL-SG5&sz=w1600"},{"index":13,"submissionNumber":"013","title":"จ๊าบมั้ยคุบ","penName":"mooniemoon","trUser":"moonymoon","uid":"0GI26K","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1ta7eHWk_Pr9A-Cf-hOB0hN3CsZs1f43J","fileId":"1ta7eHWk_Pr9A-Cf-hOB0hN3CsZs1f43J","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1ta7eHWk_Pr9A-Cf-hOB0hN3CsZs1f43J","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1ta7eHWk_Pr9A-Cf-hOB0hN3CsZs1f43J&sz=w1600"},{"index":14,"submissionNumber":"014","title":"เวลคัม ทู เทลรันเนอร์","penName":"3ventide","trUser":"assassen112","uid":"I6U23Q","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1W9c51fKkpJqmps-xPD7buG_PF-aGJ85I","fileId":"1W9c51fKkpJqmps-xPD7buG_PF-aGJ85I","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1W9c51fKkpJqmps-xPD7buG_PF-aGJ85I","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1W9c51fKkpJqmps-xPD7buG_PF-aGJ85I&sz=w1600"},{"index":15,"submissionNumber":"015","title":"วันธรรมดาของจ๊าบในโลกเทวรันต้า","penName":"NiXTORYA","trUser":"nixtorya","uid":"30FU8E","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1Sg2PAmlzf45cXlIp2jX3emnAgamY6b-G","fileId":"1Sg2PAmlzf45cXlIp2jX3emnAgamY6b-G","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1Sg2PAmlzf45cXlIp2jX3emnAgamY6b-G","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1Sg2PAmlzf45cXlIp2jX3emnAgamY6b-G&sz=w1600"},{"index":16,"submissionNumber":"016","title":"Gathering of animal friends.","penName":"Zeilvent","trUser":"zeilzeil1532","uid":"XE84F4","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=186k2cH1BTCzfa-eVhR14ZwuHOirWwaQt","fileId":"186k2cH1BTCzfa-eVhR14ZwuHOirWwaQt","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=186k2cH1BTCzfa-eVhR14ZwuHOirWwaQt","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=186k2cH1BTCzfa-eVhR14ZwuHOirWwaQt&sz=w1600"},{"index":17,"submissionNumber":"017","title":"ของขวัญจะมีค่า เมื่อมีคนรออยู่","penName":"mRD","trUser":"Mosrunner","uid":"J673HB","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1GRr-k4irKK668-4KBYkRNaAUHNAP16LP","fileId":"1GRr-k4irKK668-4KBYkRNaAUHNAP16LP","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1GRr-k4irKK668-4KBYkRNaAUHNAP16LP","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1GRr-k4irKK668-4KBYkRNaAUHNAP16LP&sz=w1600"},{"index":18,"submissionNumber":"018","title":"นี่ไงจ๊าบยังไงล๊า","penName":"REN","trUser":"Tsurokonyan","uid":"LT9X77","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=16tqbompFJmrN-gXlVr97t4KEogWSJJ0g","fileId":"16tqbompFJmrN-gXlVr97t4KEogWSJJ0g","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=16tqbompFJmrN-gXlVr97t4KEogWSJJ0g","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=16tqbompFJmrN-gXlVr97t4KEogWSJJ0g&sz=w1600"},{"index":19,"submissionNumber":"019","title":"Let's Go!","penName":"SakanaPSD","trUser":"SakanaPSD","uid":"NP9R92","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1zSGPAWmjrqUtQw8RWYAsmn-yes7Ov3Jj","fileId":"1zSGPAWmjrqUtQw8RWYAsmn-yes7Ov3Jj","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1zSGPAWmjrqUtQw8RWYAsmn-yes7Ov3Jj","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1zSGPAWmjrqUtQw8RWYAsmn-yes7Ov3Jj&sz=w1600"},{"index":20,"submissionNumber":"020","title":"ลีน่าจังกับเพื่อนใหม่ที่เทลแลนด์","penName":"P.P.","trUser":"peepeepop","uid":"BR5D94","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1FZMwKLW1c2EgOvf0gqwfn6SCJZP7F2ue","fileId":"1FZMwKLW1c2EgOvf0gqwfn6SCJZP7F2ue","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1FZMwKLW1c2EgOvf0gqwfn6SCJZP7F2ue","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1FZMwKLW1c2EgOvf0gqwfn6SCJZP7F2ue&sz=w1600"},{"index":21,"submissionNumber":"021","title":"Talesrunner Jab Journey : Welcome to Animal Village 🐶🐾","penName":"G2E","trUser":"MisterP","uid":"47XB7Y","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1p9q3M9C5BRX2OPA42HxHxoPrZLRG6TT2","fileId":"1p9q3M9C5BRX2OPA42HxHxoPrZLRG6TT2","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1p9q3M9C5BRX2OPA42HxHxoPrZLRG6TT2","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1p9q3M9C5BRX2OPA42HxHxoPrZLRG6TT2&sz=w1600"},{"index":22,"submissionNumber":"022","title":"Jab X Skyfall","penName":"Jamie","trUser":"Tatabanana","uid":"J8R88F","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1jfTwER6vCopsNvtCpRrwn2KojhnnIb3v","fileId":"1jfTwER6vCopsNvtCpRrwn2KojhnnIb3v","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1jfTwER6vCopsNvtCpRrwn2KojhnnIb3v","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1jfTwER6vCopsNvtCpRrwn2KojhnnIb3v&sz=w1600"},{"index":23,"submissionNumber":"023","title":"รูปถ่ายที่ระลึกใบที่หนึ่ง : พวกเรามาแว้ว Animal Village~!","penName":"@lilflora","trUser":"Florameow","uid":"Y36NE1","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1YwcgZ6iXMY8b1IRjK3N-DKoTRDGxDYOA","fileId":"1YwcgZ6iXMY8b1IRjK3N-DKoTRDGxDYOA","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1YwcgZ6iXMY8b1IRjK3N-DKoTRDGxDYOA","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1YwcgZ6iXMY8b1IRjK3N-DKoTRDGxDYOA&sz=w1600"},{"index":24,"submissionNumber":"024","title":"จ๊าบกับชุดโลลิต้าสุดฟรุ้งฟริ้งจากลาล่า","penName":"เส้กโหดกาย","trUser":"quisquiliae","uid":"09X6AJ","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1zQMP_n9YY3jdH69roWSLaWsvda83LHlD","fileId":"1zQMP_n9YY3jdH69roWSLaWsvda83LHlD","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1zQMP_n9YY3jdH69roWSLaWsvda83LHlD","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1zQMP_n9YY3jdH69roWSLaWsvda83LHlD&sz=w1600"},{"index":25,"submissionNumber":"025","title":"ภาพวาดของจ๊าบ","penName":"Ceejinart","trUser":"jinjin2541","uid":"9SP8L1","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1vHej3dhD_Otvo0QvSUtaYFMV1wJlbh5Y","fileId":"1vHej3dhD_Otvo0QvSUtaYFMV1wJlbh5Y","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1vHej3dhD_Otvo0QvSUtaYFMV1wJlbh5Y","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1vHej3dhD_Otvo0QvSUtaYFMV1wJlbh5Y&sz=w1600"},{"index":26,"submissionNumber":"026","title":"ภาพของจ๊าบ","penName":"Ceejinart","trUser":"jinjin2541","uid":"9SP8L1","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1jqP4rj1mG_wB6TcaIHfZ8cxjdIYVKKDK","fileId":"1jqP4rj1mG_wB6TcaIHfZ8cxjdIYVKKDK","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1jqP4rj1mG_wB6TcaIHfZ8cxjdIYVKKDK","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1jqP4rj1mG_wB6TcaIHfZ8cxjdIYVKKDK&sz=w1600"},{"index":27,"submissionNumber":"027","title":"วิ่งกับจ๊าบในเวลคัม! แอนิมอล วิลเลจ","penName":"BonN1GhT","trUser":"BonN1GhT","uid":"X729TF","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1Nn5ytnHtejvIT1MnOnmF5FE-XCGF5uO-","fileId":"1Nn5ytnHtejvIT1MnOnmF5FE-XCGF5uO-","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1Nn5ytnHtejvIT1MnOnmF5FE-XCGF5uO-","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1Nn5ytnHtejvIT1MnOnmF5FE-XCGF5uO-&sz=w1600"},{"index":28,"submissionNumber":"028","title":"เวลคัม! แอนิมอล วิลเลจ","penName":"กิอา","trUser":"PongLnwZa","uid":"X3IH14","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1sauI2eN35SqqPXv0ETo8b0htL3k-cC4N","fileId":"1sauI2eN35SqqPXv0ETo8b0htL3k-cC4N","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1sauI2eN35SqqPXv0ETo8b0htL3k-cC4N","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1sauI2eN35SqqPXv0ETo8b0htL3k-cC4N&sz=w1600"},{"index":29,"submissionNumber":"029","title":"Jab Bubble Dream","penName":"Kyuketsu Kei","trUser":"kyuketsukei","uid":"57LGA4","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1V63KJGebBqEFk3gBzYgukHMF9WNQE-Mf","fileId":"1V63KJGebBqEFk3gBzYgukHMF9WNQE-Mf","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1V63KJGebBqEFk3gBzYgukHMF9WNQE-Mf","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1V63KJGebBqEFk3gBzYgukHMF9WNQE-Mf&sz=w1600"},{"index":30,"submissionNumber":"030","title":"วิ่งในโลกนิทานไปพร้อมกับน้องจ๊าบและองค์ชาย","penName":"ErlunX3","trUser":"nine65","uid":"8X44SC","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1U2t2EIskL5T1LGuuorRxDA25CJS8lVyd","fileId":"1U2t2EIskL5T1LGuuorRxDA25CJS8lVyd","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1U2t2EIskL5T1LGuuorRxDA25CJS8lVyd","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1U2t2EIskL5T1LGuuorRxDA25CJS8lVyd&sz=w1600"},{"index":31,"submissionNumber":"031","title":"Sweet Mischief","penName":"ZeeNIL","trUser":"SPZeeNIL","uid":"C0O68J","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1KS2qNTJCzrCKrC6mAvuSF82NmZq6BdvA","fileId":"1KS2qNTJCzrCKrC6mAvuSF82NmZq6BdvA","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1KS2qNTJCzrCKrC6mAvuSF82NmZq6BdvA","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1KS2qNTJCzrCKrC6mAvuSF82NmZq6BdvA&sz=w1600"},{"index":32,"submissionNumber":"032","title":"เพื่อนๆกับเพื่อน(?)ของเพื่อนๆพาจ๊าบมาขับรถเล่นแหล---ว๊ากกกกก","penName":"Nyacoii","trUser":"Nyacoii123","uid":"3CN62Z","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1eRGz0dtUQ1aY0ZZVtkt1urVz7ZFivnE3","fileId":"1eRGz0dtUQ1aY0ZZVtkt1urVz7ZFivnE3","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1eRGz0dtUQ1aY0ZZVtkt1urVz7ZFivnE3","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1eRGz0dtUQ1aY0ZZVtkt1urVz7ZFivnE3&sz=w1600"},{"index":33,"submissionNumber":"033","title":"แต่งตัวให้จ๊าบ ๆ","penName":"SmSdWsS","trUser":"SmSdWsS","uid":"P185FZ","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1jOmBT_nrZrx4inh9h9cIVtg4zT1pYva1","fileId":"1jOmBT_nrZrx4inh9h9cIVtg4zT1pYva1","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1jOmBT_nrZrx4inh9h9cIVtg4zT1pYva1","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1jOmBT_nrZrx4inh9h9cIVtg4zT1pYva1&sz=w1600"},{"index":34,"submissionNumber":"034","title":"ผลลัพธ์ของการฝึกเคล็ดลับการวิ่งยังไงล๊า~!","penName":"Aoguro","trUser":"Kemono","uid":"4ZD2K4","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1r0aS-XkdoBSyHbv7yj34UgstRpvEMNEX","fileId":"1r0aS-XkdoBSyHbv7yj34UgstRpvEMNEX","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1r0aS-XkdoBSyHbv7yj34UgstRpvEMNEX","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1r0aS-XkdoBSyHbv7yj34UgstRpvEMNEX&sz=w1600"},{"index":35,"submissionNumber":"035","title":"จ๊าบดอก(ไม้)","penName":"Tenji","trUser":"Tenjipop","uid":"7BH18C","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1KmSv7aD38HrX1aCgE1nTfvq03tJNLiRj","fileId":"1KmSv7aD38HrX1aCgE1nTfvq03tJNLiRj","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1KmSv7aD38HrX1aCgE1nTfvq03tJNLiRj","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1KmSv7aD38HrX1aCgE1nTfvq03tJNLiRj&sz=w1600"},{"index":36,"submissionNumber":"036","title":"เจ้าสุนัขกำลังกระทำสิ่งใด","penName":"Aph7z [เอฟี่อัลทิส แต่ใช้ชื่ออิ้งค์เถอะ]","trUser":"SxmpleText","uid":"7SU20G","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1mcADTOxTi7HKAnUdLYhdov1tcrSwP7wL","fileId":"1mcADTOxTi7HKAnUdLYhdov1tcrSwP7wL","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1mcADTOxTi7HKAnUdLYhdov1tcrSwP7wL","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1mcADTOxTi7HKAnUdLYhdov1tcrSwP7wL&sz=w1600"},{"index":37,"submissionNumber":"037","title":"เฮ้! คุณรันเนอร์~! ดูอยู่หรือเปล่า?","penName":"DaKu IGO","trUser":"DarknezsEagle","uid":"291IWS","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=16LTNBP5gPUu0T5lM8Q3Lx-Cvm3d3CLyP","fileId":"16LTNBP5gPUu0T5lM8Q3Lx-Cvm3d3CLyP","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=16LTNBP5gPUu0T5lM8Q3Lx-Cvm3d3CLyP","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=16LTNBP5gPUu0T5lM8Q3Lx-Cvm3d3CLyP&sz=w1600"},{"index":38,"submissionNumber":"038","title":"\"วิ่งมาเลอะๆ อย่างงี้ต้องจับจ๊าบจุ่มน้ำ!\"","penName":"JAJA CT","trUser":"JAJA2607","uid":"4X7A9J","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1nhOXCil8J4qH2WpF6sPAHIifkovMwWcS","fileId":"1nhOXCil8J4qH2WpF6sPAHIifkovMwWcS","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1nhOXCil8J4qH2WpF6sPAHIifkovMwWcS","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1nhOXCil8J4qH2WpF6sPAHIifkovMwWcS&sz=w1600"},{"index":39,"submissionNumber":"039","title":"ยิ้มหน่อย","penName":"Nai","trUser":"naisang123","uid":"MTB059","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1s1_lpVA37plfuoYRb05ri30kx_ZfbK2v","fileId":"1s1_lpVA37plfuoYRb05ri30kx_ZfbK2v","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1s1_lpVA37plfuoYRb05ri30kx_ZfbK2v","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1s1_lpVA37plfuoYRb05ri30kx_ZfbK2v&sz=w1600"},{"index":40,"submissionNumber":"040","title":"Jabs' group photo under the starry sky","penName":"ImYeonOsDog","trUser":"14151515aaaaa","uid":"0K60PL","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1jEjESEyfomitDDAUfHoP-lc5XjY55LVG","fileId":"1jEjESEyfomitDDAUfHoP-lc5XjY55LVG","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1jEjESEyfomitDDAUfHoP-lc5XjY55LVG","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1jEjESEyfomitDDAUfHoP-lc5XjY55LVG&sz=w1600"},{"index":41,"submissionNumber":"041","title":"เน้นเข้าร่วมไม่เน้นอะไรเลย","penName":"Salmon","trUser":"oSalmono","uid":"06RA4K","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1mgU92mSUEEXFIMTzsOLlDvjXsbse1x4z","fileId":"1mgU92mSUEEXFIMTzsOLlDvjXsbse1x4z","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1mgU92mSUEEXFIMTzsOLlDvjXsbse1x4z","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1mgU92mSUEEXFIMTzsOLlDvjXsbse1x4z&sz=w1600"},{"index":42,"submissionNumber":"042","title":"Jabs' group photo under the starry sky","penName":"ImYeonOsDog","trUser":"14151515aaaaa","uid":"0K60PL","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1X1Tev0oXL8HLECZY4x0kXdUkZ7TSF0nb","fileId":"1X1Tev0oXL8HLECZY4x0kXdUkZ7TSF0nb","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1X1Tev0oXL8HLECZY4x0kXdUkZ7TSF0nb","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1X1Tev0oXL8HLECZY4x0kXdUkZ7TSF0nb&sz=w1600"},{"index":43,"submissionNumber":"043","title":"เราจะเป็นเพื่อนกันนับแต่วันนี้ และนี่เพื่อนของชั้น ชูชู! วิบวับ!","penName":"Lilypads","trUser":"lilythelilypads","uid":"25EC7J","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1j4ujpGthWtkkDAP2PhAygswiTG28SOvE","fileId":"1j4ujpGthWtkkDAP2PhAygswiTG28SOvE","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1j4ujpGthWtkkDAP2PhAygswiTG28SOvE","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1j4ujpGthWtkkDAP2PhAygswiTG28SOvE&sz=w1600"},{"index":44,"submissionNumber":"044","title":"The sea son","penName":"Vince","trUser":"wznvxce","uid":"T778CP","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1lqV3tbzDt0XXDMZqWjf2uH_H2NXi-JbP","fileId":"1lqV3tbzDt0XXDMZqWjf2uH_H2NXi-JbP","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1lqV3tbzDt0XXDMZqWjf2uH_H2NXi-JbP","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1lqV3tbzDt0XXDMZqWjf2uH_H2NXi-JbP&sz=w1600"},{"index":45,"submissionNumber":"045","title":"ต้อนรับน้องใหม่จ๊าบเกิดใหม่กับต่างโลกนิทานรันเนอร์!!","penName":"VTwin","trUser":"VTwin91","uid":"P9C8G4","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=12YGszV2TQJV-jt8g9eY-EDVNOWzF3_SD","fileId":"12YGszV2TQJV-jt8g9eY-EDVNOWzF3_SD","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=12YGszV2TQJV-jt8g9eY-EDVNOWzF3_SD","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=12YGszV2TQJV-jt8g9eY-EDVNOWzF3_SD&sz=w1600"},{"index":46,"submissionNumber":"046","title":"งานของยมทูตก็สนุกเหมือนกันนะ !","penName":"Horu","trUser":"Horu1803","uid":"E9F57Z","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1Kv23ukFNhDRhkkTkkTaTOI8EaQdgmlSv","fileId":"1Kv23ukFNhDRhkkTkkTaTOI8EaQdgmlSv","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1Kv23ukFNhDRhkkTkkTaTOI8EaQdgmlSv","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1Kv23ukFNhDRhkkTkkTaTOI8EaQdgmlSv&sz=w1600"},{"index":47,"submissionNumber":"047","title":"Jab’s Sunny Adventure","penName":"Bunny Gab","trUser":"calw001001","uid":"5H3KG6","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1mQA6ZYjxv57pT9VnRlIA3rl-3xsyVINc","fileId":"1mQA6ZYjxv57pT9VnRlIA3rl-3xsyVINc","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1mQA6ZYjxv57pT9VnRlIA3rl-3xsyVINc","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1mQA6ZYjxv57pT9VnRlIA3rl-3xsyVINc&sz=w1600"},{"index":48,"submissionNumber":"048","title":"♡ Jab and TiTi can smile with sweets ♡","penName":"Sleepy","trUser":"sleepyiscoming","uid":"5O0D7T","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1ym_NfkFoPzIuM_3oepJu2wzFbGaODuhR","fileId":"1ym_NfkFoPzIuM_3oepJu2wzFbGaODuhR","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1ym_NfkFoPzIuM_3oepJu2wzFbGaODuhR","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1ym_NfkFoPzIuM_3oepJu2wzFbGaODuhR&sz=w1600"},{"index":49,"submissionNumber":"049","title":"ต้อนรับน้องใหม่จ๊าบและต่างโลกนิทานรันเนอร์!!","penName":"VTwin","trUser":"VTwin91","uid":"P9C8G4","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1iDxykj39niSKKUo826pl2VjtDlzd84qG","fileId":"1iDxykj39niSKKUo826pl2VjtDlzd84qG","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1iDxykj39niSKKUo826pl2VjtDlzd84qG","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1iDxykj39niSKKUo826pl2VjtDlzd84qG&sz=w1600"},{"index":50,"submissionNumber":"050","title":"วันธรรมดาๆในTalesRunner","penName":"Unpeach","trUser":"demonhi5","uid":"5Y9Z8Y","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1nuG-NR-fVRJTGaWydM7uKfWm9YDAsali","fileId":"1nuG-NR-fVRJTGaWydM7uKfWm9YDAsali","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1nuG-NR-fVRJTGaWydM7uKfWm9YDAsali","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1nuG-NR-fVRJTGaWydM7uKfWm9YDAsali&sz=w1600"},{"index":51,"submissionNumber":"051","title":"Journey graph","penName":"shxdxw_p","trUser":"Azel12345","uid":"50WBI9","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=18hWX_sFVbN_Rul2GFXInl1SFikVaYkp5","fileId":"18hWX_sFVbN_Rul2GFXInl1SFikVaYkp5","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=18hWX_sFVbN_Rul2GFXInl1SFikVaYkp5","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=18hWX_sFVbN_Rul2GFXInl1SFikVaYkp5&sz=w1600"},{"index":52,"submissionNumber":"052","title":"จ๊าบกับเหล่าผองเพื่อน!","penName":"FateNight","trUser":"FateNight","uid":"KCL418","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1YaEyOJr66I5JoHbN6hlPOY_XCiRhwstf","fileId":"1YaEyOJr66I5JoHbN6hlPOY_XCiRhwstf","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1YaEyOJr66I5JoHbN6hlPOY_XCiRhwstf","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1YaEyOJr66I5JoHbN6hlPOY_XCiRhwstf&sz=w1600"},{"index":53,"submissionNumber":"053","title":"แอบเข้า! สำนักงานรักษาความปลอดภัยแอนิวิล","penName":"Kreamy","trUser":"Kimmaroo","uid":"1ZR1K9","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1JF78707cva8DBZDFSM1Ln8p2D4L4J2PI","fileId":"1JF78707cva8DBZDFSM1Ln8p2D4L4J2PI","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1JF78707cva8DBZDFSM1Ln8p2D4L4J2PI","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1JF78707cva8DBZDFSM1Ln8p2D4L4J2PI&sz=w1600"},{"index":54,"submissionNumber":"054","title":"Firework with me and you","penName":"MuTeki","trUser":"bigcubeiei","uid":"K3XK73","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1ebr9Vd6e3DFPSQhubyptHU45PoVGjaYM","fileId":"1ebr9Vd6e3DFPSQhubyptHU45PoVGjaYM","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1ebr9Vd6e3DFPSQhubyptHU45PoVGjaYM","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1ebr9Vd6e3DFPSQhubyptHU45PoVGjaYM&sz=w1600"},{"index":55,"submissionNumber":"055","title":"วิ่งๆ ไปโลด","penName":"ก้างปลาคุง","trUser":"naraton2408","uid":"H8LD90","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1N6YwBqUJ4mZXo4UrP1W6ukT8KPMzHr_T","fileId":"1N6YwBqUJ4mZXo4UrP1W6ukT8KPMzHr_T","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1N6YwBqUJ4mZXo4UrP1W6ukT8KPMzHr_T","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1N6YwBqUJ4mZXo4UrP1W6ukT8KPMzHr_T&sz=w1600"},{"index":56,"submissionNumber":"056","title":"แฟชั่นสุดจ๊าบกับโคลอี้","penName":"MADMOON","trUser":"itsmeohm","uid":"696JMA","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=15bhTSpF2NdeWeNHXl9T5INejaRHJPoMJ","fileId":"15bhTSpF2NdeWeNHXl9T5INejaRHJPoMJ","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=15bhTSpF2NdeWeNHXl9T5INejaRHJPoMJ","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=15bhTSpF2NdeWeNHXl9T5INejaRHJPoMJ&sz=w1600"},{"index":57,"submissionNumber":"057","title":"Dream Tales นิทานฝัน แอนิมอลวิลเลจ","penName":"Luumi","trUser":"MatChaN","uid":"CH320B","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1y1qvhyLoyyPPd9RLnpD9VVAP1mw2RXHi","fileId":"1y1qvhyLoyyPPd9RLnpD9VVAP1mw2RXHi","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1y1qvhyLoyyPPd9RLnpD9VVAP1mw2RXHi","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1y1qvhyLoyyPPd9RLnpD9VVAP1mw2RXHi&sz=w1600"},{"index":58,"submissionNumber":"058","title":"ลูกรัก Tales Runner มาแล้วจ้าา~","penName":"BabeJeep","trUser":"BabeJeep","uid":"9GW93L","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1cxi1jZd9ewjoX_eB0lHF7h8PusT4ioJ_","fileId":"1cxi1jZd9ewjoX_eB0lHF7h8PusT4ioJ_","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1cxi1jZd9ewjoX_eB0lHF7h8PusT4ioJ_","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1cxi1jZd9ewjoX_eB0lHF7h8PusT4ioJ_&sz=w1600"},{"index":59,"submissionNumber":"059","title":"Friends Become Enemies.","penName":"CASANOVA","trUser":"tawan250","uid":"36H7TM","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1cT9QJ3sAC2kCdAURtofkQI1zztNrknsd","fileId":"1cT9QJ3sAC2kCdAURtofkQI1zztNrknsd","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1cT9QJ3sAC2kCdAURtofkQI1zztNrknsd","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1cT9QJ3sAC2kCdAURtofkQI1zztNrknsd&sz=w1600"},{"index":60,"submissionNumber":"060","title":"Take a Photo with Jab","penName":"MPuff","trUser":"honeybelle","uid":"P55C2D","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1Q9HlI4hT76XfsqVyU_lE0yxbX6ALUFwS","fileId":"1Q9HlI4hT76XfsqVyU_lE0yxbX6ALUFwS","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1Q9HlI4hT76XfsqVyU_lE0yxbX6ALUFwS","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1Q9HlI4hT76XfsqVyU_lE0yxbX6ALUFwS&sz=w1600"},{"index":61,"submissionNumber":"061","title":"น้องจ๊าบส่งกำลัง <3 ให้รันเนอร์เก็บผลไม้น้า ^^","penName":"HarleyStar","trUser":"iceheart28","uid":"F30T7G","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1PmWTh1hRPtCy_K7dX1I998MHSrhNLnBp","fileId":"1PmWTh1hRPtCy_K7dX1I998MHSrhNLnBp","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1PmWTh1hRPtCy_K7dX1I998MHSrhNLnBp","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1PmWTh1hRPtCy_K7dX1I998MHSrhNLnBp&sz=w1600"},{"index":62,"submissionNumber":"062","title":"จ๊าบวิ่งกิจเเล้ว ขอพักหน่อยน่า~","penName":"ChelonZ","trUser":"NAMIDEREGOOD","uid":"JN4Y44","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1n5mhLEU5vfKLENAy_X1lGEHljxDCpcNA","fileId":"1n5mhLEU5vfKLENAy_X1lGEHljxDCpcNA","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1n5mhLEU5vfKLENAy_X1lGEHljxDCpcNA","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1n5mhLEU5vfKLENAy_X1lGEHljxDCpcNA&sz=w1600"},{"index":63,"submissionNumber":"063","title":"จ๊าบ!! กับเหล่ารันเนอร์ในตลาดน้ำ!!!🐾🌊🫶","penName":"MayA (เมย์-อา)","trUser":"MayApapipat","uid":"S354SV","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1sAmEbWfqGRLpzWyWRdiBxICpw11zZVa8","fileId":"1sAmEbWfqGRLpzWyWRdiBxICpw11zZVa8","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1sAmEbWfqGRLpzWyWRdiBxICpw11zZVa8","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1sAmEbWfqGRLpzWyWRdiBxICpw11zZVa8&sz=w1600"},{"index":64,"submissionNumber":"064","title":"จ๊าบเเละจอมโจรกระปุกหมู","penName":"AptenodyteZ","trUser":"popzanarak08","uid":"2KYI30","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1FbtPPzKWmbiaQq9oIzJe5FEeFt9WKrq7","fileId":"1FbtPPzKWmbiaQq9oIzJe5FEeFt9WKrq7","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1FbtPPzKWmbiaQq9oIzJe5FEeFt9WKrq7","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1FbtPPzKWmbiaQq9oIzJe5FEeFt9WKrq7&sz=w1600"},{"index":65,"submissionNumber":"065","title":"Jabs' group photo under the starry sky","penName":"ImYeonOsDog","trUser":"14151515aaaaa","uid":"0K60PL","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1J_fyUd8u-dTtKJmoRbqiKV_m-nbVqae-","fileId":"1J_fyUd8u-dTtKJmoRbqiKV_m-nbVqae-","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1J_fyUd8u-dTtKJmoRbqiKV_m-nbVqae-","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1J_fyUd8u-dTtKJmoRbqiKV_m-nbVqae-&sz=w1600"},{"index":66,"submissionNumber":"066","title":"แตงโมแตงโมแตงโม","penName":"ป้าแดงแซงทางโค้ง","trUser":"Kanoozts","uid":"1R9L5E","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1ccgvnTJ9v466tRnLqXV--tFrPeBOwlbu","fileId":"1ccgvnTJ9v466tRnLqXV--tFrPeBOwlbu","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1ccgvnTJ9v466tRnLqXV--tFrPeBOwlbu","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1ccgvnTJ9v466tRnLqXV--tFrPeBOwlbu&sz=w1600"},{"index":67,"submissionNumber":"067","title":"Gaming with Jab","penName":"Rollosimp","trUser":"Pardei","uid":"HZ6V47","category":"❤️Traditional Art","driveLink":"https://drive.google.com/open?id=1YChP_dMQ8_MCnBWOa3TFxPrfzmZNDlzH","fileId":"1YChP_dMQ8_MCnBWOa3TFxPrfzmZNDlzH","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1YChP_dMQ8_MCnBWOa3TFxPrfzmZNDlzH","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1YChP_dMQ8_MCnBWOa3TFxPrfzmZNDlzH&sz=w1600"},{"index":68,"submissionNumber":"068","title":"Memory of Animal Village","penName":"Asterynthia","trUser":"Astereaster","uid":"7V1B1V","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1GnyV394mIxO3zbcnIeO69KuTKinIZObv","fileId":"1GnyV394mIxO3zbcnIeO69KuTKinIZObv","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1GnyV394mIxO3zbcnIeO69KuTKinIZObv","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1GnyV394mIxO3zbcnIeO69KuTKinIZObv&sz=w1600"},{"index":69,"submissionNumber":"069","title":"ด้วยรักและเอ็นดู","penName":"Rizenna","trUser":"rizenna01","uid":"6OT2V3","category":"🩵Digital Art","driveLink":"https://drive.google.com/open?id=1AIzRvuv3cYVi-wAxz-KvFkjpUDQaXsZV","fileId":"1AIzRvuv3cYVi-wAxz-KvFkjpUDQaXsZV","downloadDirectUrl":"https://drive.google.com/uc?export=download&id=1AIzRvuv3cYVi-wAxz-KvFkjpUDQaXsZV","thumbnailDirectUrl":"https://drive.google.com/thumbnail?id=1AIzRvuv3cYVi-wAxz-KvFkjpUDQaXsZV&sz=w1600"}];
+    let activeFilter = 'real'; // default to real entries #8-#69
+
+    function setFilter(filter) {
+      activeFilter = filter;
+      document.querySelectorAll('.filter-tab').forEach(el => {
+        el.className = 'filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-slate-100 text-slate-700 arcade-btn';
+      });
+      const activeBtn = document.getElementById('tab-' + filter);
+      if (activeBtn) {
+        activeBtn.className = 'filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-sky-400 text-slate-950 arcade-btn font-black';
+      }
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      const filtered = ITEMS.filter(item => {
+        // filter tab
+        if (activeFilter === 'real' && item.index < 8) return false;
+        if (activeFilter === 'digital' && !item.category.includes('Digital')) return false;
+        if (activeFilter === 'traditional' && !item.category.includes('Traditional')) return false;
+
+        // search query
+        if (q) {
+          const matchStr = (item.submissionNumber + ' ' + item.title + ' ' + item.penName + ' ' + item.trUser + ' ' + item.uid + ' ' + item.category).toLowerCase();
+          if (!matchStr.includes(q)) return false;
+        }
+        return true;
+      });
+
+      document.getElementById('resultCount').innerText = 'แสดง ' + filtered.length + ' จากทั้งหมด ' + ITEMS.length + ' รายการ';
+
+      filtered.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-sky-50/70 transition-colors align-middle';
+
+        const isTest = item.index < 8;
+        const testBadge = isTest ? '<span class="ml-1.5 px-1.5 py-0.5 text-[10px] font-black rounded bg-amber-200 text-amber-900 border border-amber-400">เทสต์</span>' : '';
+        const isDigital = item.category.includes('Digital');
+        const catBadge = isDigital 
+          ? '<span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300">🖥️ Digital Art</span>'
+          : '<span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">✏️ Traditional Art</span>';
+
+        const defaultFileName = item.submissionNumber + '.jpg';
+
+        tr.innerHTML = `
+          <td class="p-3 text-center font-black text-sky-700">
+            <span class="inline-block px-2 py-1 rounded-lg bg-sky-100 border border-sky-300 font-mono">#${item.submissionNumber}</span>
+          </td>
+          <td class="p-3">
+            <div class="font-bold text-slate-900 flex items-center flex-wrap gap-1">
+              ${item.title} ${testBadge}
+            </div>
+            <div class="mt-1">${catBadge}</div>
+          </td>
+          <td class="p-3 font-medium text-slate-800">
+            <div>${item.penName || '—'}</div>
+          </td>
+          <td class="p-3 text-xs text-slate-500">
+            <div>ไอดี: <strong class="text-slate-700">${item.trUser || '—'}</strong></div>
+            <div>UID: <strong class="text-slate-700">${item.uid || '—'}</strong></div>
+          </td>
+          <td class="p-3 text-center">
+            <button onclick="copyText('${defaultFileName}', this)" title="คลิกเพื่อคัดลอกชื่อไฟล์นี้" class="inline-flex items-center gap-1 font-mono text-xs font-bold px-2 py-1 rounded-md bg-slate-100 hover:bg-sky-200 border border-slate-300 transition">
+              <span>${defaultFileName}</span>
+              <span class="text-slate-400 text-[10px]">📋</span>
+            </button>
+          </td>
+          <td class="p-3 text-right">
+            <div class="flex items-center justify-end gap-1.5">
+              <a href="${item.driveLink}" target="_blank" rel="noreferrer" class="arcade-btn inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-white hover:bg-sky-100 text-sky-700">
+                <span>เปิด Drive ↗</span>
+              </a>
+              <button onclick="copyText('${item.driveLink}', this)" class="arcade-btn inline-flex items-center text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700" title="คัดลอกลิงก์">
+                📋
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✓ คัดลอกแล้ว!';
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+        }, 1500);
+      });
+    }
+
+    function copyAllLinks() {
+      const links = ITEMS.map(item => item.driveLink).join('\n');
+      navigator.clipboard.writeText(links).then(() => {
+        const btn = document.getElementById('btnCopyAll');
+        const old = btn.innerHTML;
+        btn.innerHTML = '✓ คัดลอก 69 ลิงก์แล้ว!';
+        setTimeout(() => {
+          btn.innerHTML = old;
+        }, 2000);
+      });
+    }
+
+    // Init
+    setFilter('real');
+  </script>
+</body>
+</html>
