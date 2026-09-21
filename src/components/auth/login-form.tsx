@@ -34,12 +34,15 @@ const DEFAULT_PINS: Record<string, string> = {
 export function LoginForm({
   people,
   errorText,
+  artworkCount = 61,
   initialTab = "JUDGE",
 }: {
   people: LoginPerson[];
   errorText: string | null;
+  artworkCount?: number;
   initialTab?: "JUDGE" | "ADMIN";
 }) {
+
   const judges = useMemo(() => people.filter((p) => p.role === "JUDGE"), [people]);
   const admins = useMemo(() => people.filter((p) => p.role !== "JUDGE"), [people]);
 
@@ -92,8 +95,9 @@ export function LoginForm({
             </span>
           </div>
           <span className="rounded-full border-2 border-slate-900 bg-yellow-300 px-3 py-0.5 text-xs font-black text-slate-900 shadow-[1px_1px_0_#0f172a]">
-            69 ARTWORKS
+            {artworkCount} ARTWORKS
           </span>
+
         </div>
 
         {/* Mode Selector Tabs (POP Game Style) */}

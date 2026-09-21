@@ -26,10 +26,11 @@ export default async function LoginPage({
   const session = await getSession();
   if (session) redirect(session.role === "JUDGE" ? "/judge" : "/admin");
 
-  const [people, params] = await Promise.all([
+  const [people, countRows, params] = await Promise.all([
     query<LoginPerson>(`SELECT u.id,u.name,u.role,u.avatar_color,u.avatar_url,c.id AS contest_id,c.name AS contest_name,c.judge_login_mode
       FROM users u JOIN contest_judges cj ON cj.user_id=u.id JOIN contests c ON c.id=cj.contest_id
       WHERE u.status='ACTIVE' AND cj.status='ACTIVE' AND (u.role IN ('ADMIN','SUPER_ADMIN') OR c.status IN ('OPEN','JUDGING')) ORDER BY c.created_at DESC,cj.display_order,u.name`),
+    query<{ count: number }>(`SELECT COUNT(*)::int AS count FROM submissions WHERE status='ACTIVE'`),
     searchParams,
   ]);
 
@@ -58,9 +59,9 @@ export default async function LoginPage({
           </Link>
           <Link
             href="/admin/results"
-            className="inline-flex items-center gap-1.5 rounded-xl border-2 border-slate-900 bg-yellow-300 px-3.5 py-2 text-xs font-black text-slate-950 shadow-[2px_2px_0_#0f172a] transition hover:bg-yellow-400 active:translate-y-0.5 sm:text-sm"
+            className="inline-flex items-center gap-1.5 rounded-xl border-2 border-slate-900 bg-amber-400 px-3.5 py-2 text-xs font-black text-slate-950 shadow-[2px_2px_0_#0f172a] transition hover:bg-amber-300 active:translate-y-0.5 sm:text-sm"
           >
-            <span>🏆 ผลการตัดสิน Top 3</span>
+            <span>🏆 ลีดเดอร์บอร์ด</span>
           </Link>
         </div>
       </header>
@@ -84,8 +85,10 @@ export default async function LoginPage({
         <LoginForm
           people={people}
           errorText={errorText}
+          artworkCount={countRows[0]?.count ?? 61}
           initialTab={params.tab === "admin" ? "ADMIN" : "JUDGE"}
         />
+
 
         {/* Bottom Stat Badges */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 max-w-xl mx-auto">
