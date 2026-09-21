@@ -4,6 +4,9 @@ import path from "node:path";
 const jsonPath = path.join(process.cwd(), "public", "drive_files_list.json");
 const data = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
 
+const digitalsCount = data.filter(d => d.category.includes("Digital")).length;
+const traditionalsCount = data.filter(d => d.category.includes("Traditional")).length;
+
 const html = `<!DOCTYPE html>
 <html lang="th">
 <head>
@@ -32,7 +35,7 @@ const html = `<!DOCTYPE html>
         <span class="text-3xl">📁</span>
         <div>
           <h1 class="text-xl sm:text-2xl font-black text-slate-900 leading-tight">คลังไฟล์ Google Drive ทุกลำดับ</h1>
-          <p class="text-xs text-slate-500">Tales Artventure : Animal Village with Friends (รวม 69 ชิ้นงาน)</p>
+          <p class="text-xs text-slate-500">Tales Artventure : Animal Village with Friends (รวม ${data.length} ชิ้นงาน)</p>
         </div>
       </div>
       <div class="flex flex-wrap gap-2">
@@ -40,7 +43,7 @@ const html = `<!DOCTYPE html>
           📥 ดาวน์โหลด CSV (Excel)
         </a>
         <button onclick="copyAllLinks()" id="btnCopyAll" class="arcade-btn inline-flex items-center gap-1.5 bg-sky-400 hover:bg-sky-300 text-slate-950 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold">
-          📋 คัดลอกทุกลิงก์ (69 Links)
+          📋 คัดลอกทุกลิงก์ (${data.length} Links)
         </button>
         <a href="/judge" class="arcade-btn inline-flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold">
           🎮 ไปห้องตัดสิน
@@ -59,15 +62,15 @@ const html = `<!DOCTYPE html>
           <strong class="text-sky-900 block text-sm font-bold mb-1">1. โหลดภาพจาก Drive</strong>
           กดปุ่ม <strong>"เปิด Google Drive ↗"</strong> ที่แถวผลงานที่ต้องการ แล้วดาวน์โหลดรูปภาพลงเครื่องคอมพิวเตอร์ของคุณ
         </div>
-        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
-          <strong class="text-amber-900 block text-sm font-bold mb-1">2. ตั้งชื่อตามหมายเลข</strong>
-          ตั้งชื่อไฟล์ภาพให้ตรงกับหมายเลขผลงาน เช่น <code class="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border">008.png</code> หรือ <code class="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border">008.jpg</code>
+        <div class="p-3 bg-sky-50 rounded-xl border border-sky-200">
+          <strong class="text-sky-900 block text-sm font-bold mb-1">2. บันทึกชื่อตามรหัส</strong>
+          บันทึกหรือเปลี่ยนชื่อไฟล์ให้ตรงกับเลขผลงาน เช่น <code class="font-bold text-sky-700 bg-white px-1 rounded">001.png</code> แล้วนำไปวางในโฟลเดอร์:
+          <code class="block font-mono text-[11px] bg-white p-1 rounded mt-1 border text-slate-700">public/artworks/</code>
         </div>
-        <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-          <strong class="text-emerald-900 block text-sm font-bold mb-1">3. วางลงโฟลเดอร์ artworks</strong>
-          นำไฟล์ไปวางในโฟลเดอร์:<br>
-          <code class="font-mono text-[11px] font-bold text-emerald-800 bg-white px-1.5 py-0.5 rounded border block mt-1 break-all">public/artworks/</code>
-          แล้วรันคำสั่ง: <code class="font-bold text-slate-900 bg-white px-1 rounded">node scripts/sync-local-artworks.mjs</code>
+        <div class="p-3 bg-sky-50 rounded-xl border border-sky-200">
+          <strong class="text-sky-900 block text-sm font-bold mb-1">3. กดซิงค์รูปเข้าเว็บ</strong>
+          ไปที่หน้า <strong>Admin ➔ Submissions</strong> แล้วกดปุ่ม <strong>"🔄 ซิงค์ภาพจากเครื่อง"</strong> หรือรันสคริปต์
+          <code class="block font-mono text-[11px] bg-white p-1 rounded mt-1 border text-slate-700">node scripts/sync-local-artworks.mjs</code>
         </div>
       </div>
     </div>
@@ -80,17 +83,14 @@ const html = `<!DOCTYPE html>
                  class="w-full px-4 py-2 text-sm border-2 border-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400 font-medium">
         </div>
         <div class="flex flex-wrap gap-1.5 text-xs font-bold" id="filterTabs">
-          <button onclick="setFilter('real')" id="tab-real" class="filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-sky-400 text-slate-950 arcade-btn">
-            ✨ ผลงานจริง (#008 - #069 : 62 ชิ้น)
-          </button>
-          <button onclick="setFilter('all')" id="tab-all" class="filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-slate-100 text-slate-700 arcade-btn">
-            🏁 ทั้งหมด (69 ชิ้น)
+          <button onclick="setFilter('all')" id="tab-all" class="filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-sky-400 text-slate-950 arcade-btn">
+            🏁 ทั้งหมด (${data.length} ชิ้น)
           </button>
           <button onclick="setFilter('digital')" id="tab-digital" class="filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-slate-100 text-slate-700 arcade-btn">
-            🖥️ Digital Art (53)
+            🖥️ Digital Art (${digitalsCount})
           </button>
           <button onclick="setFilter('traditional')" id="tab-traditional" class="filter-tab px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-slate-100 text-slate-700 arcade-btn">
-            ✏️ Traditional Art (16)
+            ✏️ Traditional Art (${traditionalsCount})
           </button>
         </div>
       </div>
