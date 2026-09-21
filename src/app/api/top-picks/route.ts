@@ -34,7 +34,8 @@ export async function POST(request: Request) {
   if (!isTrustedMutation(request)) {
     return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
   }
-  const session = await requireApiSession(["JUDGE"]);
+  const session = await requireApiSession(["JUDGE", "ADMIN", "SUPER_ADMIN"]);
+
   if (!session || !session.contestId) {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }

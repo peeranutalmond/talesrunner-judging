@@ -12,7 +12,8 @@ export default async function JudgePage({
 }: {
   searchParams: Promise<{ submission?: string; category?: string; track?: string }>;
 }) {
-  const session = await requireSession(["JUDGE"]);
+  const session = await requireSession(["JUDGE", "ADMIN", "SUPER_ADMIN"]);
+
   const params = await searchParams;
   const categoryParam = params.category || params.track;
   const workspace = await getJudgeWorkspace(session.contestId!, session.id, params.submission, categoryParam);

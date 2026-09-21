@@ -18,7 +18,8 @@ export default async function ReviewPage({
     tab?: string;
   }>;
 }) {
-  const session = await requireSession(["JUDGE"]);
+  const session = await requireSession(["JUDGE", "ADMIN", "SUPER_ADMIN"]);
+
   const params = await searchParams;
   const categoryParam = params.category || params.track;
   const isSpecificCat = Boolean(categoryParam && categoryParam !== "all");

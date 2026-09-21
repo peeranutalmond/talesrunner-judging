@@ -306,7 +306,8 @@ export async function updateSettingsAction(formData: FormData) {
 
 export async function createCriteriaVersionAction(formData: FormData) {
   const session = await admin();
-  const raw = z.object({ criteriaJson: z.string(), confirmation:z.literal("CREATE VERSION"), migrationMode:z.enum(["NONE","COMPATIBLE"]).default("NONE") }).parse(Object.fromEntries(formData));
+  const raw = z.object({ criteriaJson: z.string(), confirmation: z.string().optional(), migrationMode: z.enum(["NONE","COMPATIBLE"]).default("NONE") }).parse(Object.fromEntries(formData));
+
   const items = z.array(z.object({ name: z.string().min(2).max(100), description: z.string().max(400).default(""), maxScore: z.number().positive().max(100) })).min(1).parse(JSON.parse(raw.criteriaJson));
   const total = items.reduce((sum, item) => sum + item.maxScore, 0);
   if (Math.abs(total - 100) > 0.0001) throw new Error("Criteria total must equal 100");
