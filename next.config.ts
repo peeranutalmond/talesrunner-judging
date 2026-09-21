@@ -2,8 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  serverExternalPackages: ["@electric-sql/pglite", "postgres", "sharp"],
+  serverExternalPackages: ["postgres", "sharp"],
   experimental: {
+
     serverActions: { bodySizeLimit: "12mb" },
   },
   async headers() {

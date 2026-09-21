@@ -1,9 +1,9 @@
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
-import { PGlite } from "@electric-sql/pglite";
 import postgres from "postgres";
 import { hash } from "bcryptjs";
 import { INITIAL_SCHEMA_SQL } from "./schema";
+
 
 export interface Queryable {
   query<T extends object>(sql: string, params?: unknown[]): Promise<T[]>;
@@ -40,8 +40,10 @@ async function createClient(): Promise<Queryable> {
   } else {
     const dataDir = path.join(process.cwd(), "data");
     await mkdir(dataDir, { recursive: true });
+    const { PGlite } = await import("@electric-sql/pglite");
     const pglite = new PGlite(path.join(dataDir, "pglite"));
     await pglite.exec(INITIAL_SCHEMA_SQL);
+
     client = {
       async query<T extends object>(text: string, params: unknown[] = []) {
         const result = await pglite.query<T>(text, params);
