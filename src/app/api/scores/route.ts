@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { requireApiSession } from "@/lib/auth/session";
 import { saveCriterionScores } from "@/lib/services/judging";
 import { isTrustedMutation } from "@/lib/auth/origin";
@@ -21,7 +22,15 @@ export async function POST(request: Request) {
   if (!parsed.success || session.contestId !== parsed.data?.contestId) return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
   try {
     const result = await saveCriterionScores({ ...parsed.data, judgeId: session.id, actorId: session.id });
+    revalidatePath("/admin");
+    revalidatePath("/admin/judges");
+    revalidatePath("/admin/progress");
+    revalidatePath("/admin/results");
+    revalidatePath(`/admin/results/${parsed.data.submissionId}`);
+    revalidatePath("/judge");
+    revalidatePath("/judge/review");
     return NextResponse.json(result);
+
   } catch (error) {
     const code = error instanceof Error ? error.message : "SAVE_FAILED";
     const status = code === "SCORE_CONFLICT" ? 409 : code === "RESULTS_LOCKED" ? 423 : 400;

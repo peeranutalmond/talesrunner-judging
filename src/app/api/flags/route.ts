@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { requireApiSession } from "@/lib/auth/session";
 import { setJudgeFlag } from "@/lib/services/judging";
 import { isTrustedMutation } from "@/lib/auth/origin";
@@ -14,8 +15,12 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success || parsed.data.contestId !== session.contestId) return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
   try {
-    return NextResponse.json(await setJudgeFlag(parsed.data.contestId, session.id, parsed.data.submissionId, parsed.data.flagged));
+    const res = await setJudgeFlag(parsed.data.contestId, session.id, parsed.data.submissionId, parsed.data.flagged);
+    revalidatePath("/admin/judges");
+    revalidatePath("/judge");
+    return NextResponse.json(res);
   } catch {
     return NextResponse.json({ error: "FLAG_FAILED" }, { status: 400 });
   }
 }
+

@@ -1,6 +1,5 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import sharp from "sharp";
+
 import { NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth/session";
 import { query } from "@/lib/db";
@@ -44,23 +43,30 @@ export async function POST(request: Request) {
     const metadata = await sharp(original, { limitInputPixels: 100_000_000 }).metadata();
     if (!metadata.width || !metadata.height) throw new Error("INVALID_IMAGE");
     const thumbnail = await sharp(original, { limitInputPixels: 100_000_000 }).rotate().resize({ width: 720, height: 720, fit: "inside", withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
-    const id = crypto.randomUUID();
-    const originalPath = `${session.contestId}/original/${id}.${extension}`;
-    const thumbnailPath = `${session.contestId}/thumbnail/${id}.webp`;
+    const originalId = crypto.randomUUID();
+    const thumbnailId = crypto.randomUUID();
+    const originalPath = `${session.contestId}/original/${originalId}.${extension}`;
+    const thumbnailPath = `${session.contestId}/thumbnail/${thumbnailId}.webp`;
     let imageUrl = await uploadSupabase(originalPath, original, file.type);
     let thumbnailUrl = await uploadSupabase(thumbnailPath, thumbnail, "image/webp");
+
     if (!imageUrl || !thumbnailUrl) {
-      const publicRoot = path.resolve(process.cwd(), "public", "uploads");
-      const originalTarget = path.resolve(publicRoot, originalPath);
-      const thumbnailTarget = path.resolve(publicRoot, thumbnailPath);
-      if (!originalTarget.startsWith(publicRoot + path.sep) || !thumbnailTarget.startsWith(publicRoot + path.sep)) throw new Error("INVALID_UPLOAD_PATH");
-      await Promise.all([mkdir(path.dirname(originalTarget), { recursive: true }), mkdir(path.dirname(thumbnailTarget), { recursive: true })]);
-      await Promise.all([writeFile(originalTarget, original), writeFile(thumbnailTarget, thumbnail)]);
-      imageUrl = `/uploads/${originalPath.replaceAll("\\", "/")}`;
-      thumbnailUrl = `/uploads/${thumbnailPath.replaceAll("\\", "/")}`;
+      // Persist permanently in Neon Cloud PostgreSQL (works on serverless without read-only filesystem issues)
+      await query(
+        "INSERT INTO uploaded_files (id, mime_type, data, size_bytes) VALUES ($1, $2, $3, $4)",
+        [originalId, file.type, Buffer.from(original), original.length]
+      );
+      await query(
+        "INSERT INTO uploaded_files (id, mime_type, data, size_bytes) VALUES ($1, $2, $3, $4)",
+        [thumbnailId, "image/webp", Buffer.from(thumbnail), thumbnail.length]
+      );
+      imageUrl = `/api/images/${originalId}`;
+      thumbnailUrl = `/api/images/${thumbnailId}`;
     }
-    await query("INSERT INTO audit_logs (id,contest_id,actor_user_id,action_type,entity_type,entity_id,after_data) VALUES ($1,$2,$3,'IMAGE_UPLOADED','upload',$4,$5::jsonb)", [crypto.randomUUID(),session.contestId,session.id,id,JSON.stringify({ imageUrl,thumbnailUrl,width:metadata.width,height:metadata.height,size:file.size,type:file.type })]);
+
+    await query("INSERT INTO audit_logs (id,contest_id,actor_user_id,action_type,entity_type,entity_id,after_data) VALUES ($1,$2,$3,'IMAGE_UPLOADED','upload',$4,$5::jsonb)", [crypto.randomUUID(),session.contestId,session.id,originalId,JSON.stringify({ imageUrl,thumbnailUrl,width:metadata.width,height:metadata.height,size:file.size,type:file.type })]);
     return NextResponse.json({ imageUrl, thumbnailUrl, width: metadata.width, height: metadata.height });
+
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "UPLOAD_FAILED" }, { status: 400 });
   }

@@ -232,5 +232,16 @@ CREATE INDEX IF NOT EXISTS idx_judge_top_picks_submission ON judge_top_picks(sub
 CREATE INDEX IF NOT EXISTS idx_audit_contest_created ON audit_logs(contest_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_revisions_score_changed ON score_revisions(score_id, changed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_auth_attempts_key_time ON auth_attempts(attempt_key, attempted_at DESC);
+
+CREATE TABLE IF NOT EXISTS uploaded_files (
+  id TEXT PRIMARY KEY,
+  mime_type TEXT NOT NULL,
+  data BYTEA NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_uploaded_files_created ON uploaded_files(created_at DESC);
 `;
+
 

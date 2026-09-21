@@ -1,16 +1,32 @@
-import crypto from "node:crypto";
-import bcrypt from "bcryptjs";
 import postgres from "postgres";
+import sharp from "sharp";
 
-const baseUrl = "https://talesrunner-artventure.netlify.app";
 const sql = postgres("postgresql://neondb_owner:npg_XzoIP1EsmK3d@ep-cold-sky-b4yiy5jl-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require");
 
-const pin1234 = await bcrypt.hash("1234", 10);
-await sql`UPDATE users SET pin_hash = ${pin1234} WHERE role = 'JUDGE'`;
-await sql`UPDATE contest_judges SET pin_hash = ${pin1234} WHERE user_id IN (SELECT id FROM users WHERE role = 'JUDGE')`;
-console.log("All judges updated to PIN 1234 successfully in Neon DB!");
+const testBuffer = await sharp({
+  create: {
+    width: 100,
+    height: 100,
+    channels: 4,
+    background: { r: 255, g: 0, b: 0, alpha: 1 }
+  }
+}).png().toBuffer();
 
-const secret = "talesrunner-artventure-secret-key-super-safe-2026";
+const id = "test-" + Date.now();
+await sql`INSERT INTO uploaded_files (id, mime_type, data, size_bytes) VALUES (${id}, 'image/png', ${testBuffer}, ${testBuffer.length})`;
+console.log("Inserted test image with ID:", id);
+
+const rows = await sql`SELECT id, mime_type, size_bytes, OCTET_LENGTH(data) AS bytes_len FROM uploaded_files WHERE id = ${id}`;
+console.log("Read back from Neon DB:", rows);
+
+await sql`DELETE FROM uploaded_files WHERE id = ${id}`;
+console.log("Cleaned up test image.");
+
+await sql.end();
+process.exit(0);
+
+
+
 
 function sign(input) {
   return crypto.createHmac("sha256", secret).update(input).digest("base64url");
@@ -52,14 +68,19 @@ const [sub] = await sql`SELECT * FROM submissions WHERE contest_id = 'contest-de
 console.log(`Contest: ${contest.name}, Active Version: ${contest.active_criteria_version_id}`);
 console.log(`Criteria count: ${criteria.length}, Submission: #${sub.submission_number} (${sub.artwork_title})`);
 
+// Fetch existing scores for submission to get expectedVersion
+const existingScores = await sql`SELECT criterion_id, version FROM scores WHERE contest_id = 'contest-demo' AND submission_id = ${sub.id} AND judge_id = 'c2418989-412e-40b4-928a-00d07e58f60a' AND is_active = TRUE`;
+const versionMap = new Map(existingScores.map(r => [r.criterion_id, r.version]));
+
 const scoreBody = {
   contestId: "contest-demo",
   submissionId: sub.id,
   criteriaVersionId: contest.active_criteria_version_id,
-  comment: "ทดสอบการให้คะแนนแบบเรียลไทม์จากระบบ",
+  comment: "แก้ไขคะแนนรอบที่ 2 สำเร็จ",
   scores: criteria.map(c => ({
     criterionId: c.id,
-    score: Math.round(Number(c.max_score) * 0.8)
+    score: Math.round(Number(c.max_score) * 0.9),
+    expectedVersion: versionMap.get(c.id)
   }))
 };
 
@@ -77,6 +98,7 @@ const postScoreRes = await fetch(`${baseUrl}/api/scores`, {
 console.log("Judge POST /api/scores status:", postScoreRes.status);
 const scoreResult = await postScoreRes.text();
 console.log("Judge POST /api/scores response:", scoreResult);
+
 
 // 4. Test submitting score as Admin01
 console.log("\n--- 4. Testing POST /api/scores as Admin01 (SUPER_ADMIN) ---");
