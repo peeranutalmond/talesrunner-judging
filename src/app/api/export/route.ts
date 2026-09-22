@@ -3,9 +3,43 @@ import * as XLSX from "xlsx";
 import { requireApiSession } from "@/lib/auth/session";
 import { query } from "@/lib/db";
 import { getAuditLogs, getJudgeProgress, getRanking } from "@/lib/services/admin";
+import { generateMasterExcelWorkbook } from "@/lib/services/export";
 
-type ExportRow=Record<string,unknown>;
-export async function GET(request:Request){const session=await requireApiSession(["ADMIN","SUPER_ADMIN"]);if(!session)return NextResponse.json({error:"UNAUTHORIZED"},{status:401});const url=new URL(request.url);const dataset=url.searchParams.get("dataset")??"ranking";const format=url.searchParams.get("format")??"csv";let rows:ExportRow[];
+type ExportRow = Record<string, unknown>;
+
+export async function GET(request: Request) {
+  const session = await requireApiSession(["ADMIN", "SUPER_ADMIN"]);
+  if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+
+  const url = new URL(request.url);
+  const dataset = url.searchParams.get("dataset") ?? "master";
+  const format = url.searchParams.get("format") ?? "xlsx";
+
+  // If master dataset is requested with xlsx format
+  if (dataset === "master" || dataset === "all") {
+    const buffer = await generateMasterExcelWorkbook(session.contestId!);
+    await query(
+      "INSERT INTO audit_logs (id,contest_id,actor_user_id,action_type,entity_type,entity_id,after_data) VALUES ($1,$2,$3,'EXPORT_CREATED','export',$4,$5::jsonb)",
+      [
+        crypto.randomUUID(),
+        session.contestId,
+        session.id,
+        `master-${Date.now()}`,
+        JSON.stringify({ dataset: "master", format: "xlsx" }),
+      ]
+    );
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filename = `talesrunner-master-report-${dateStr}.xlsx`;
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+      },
+    });
+  }
+
+  let rows: ExportRow[];
   if(dataset==="raw-scores"){
     const [raw,ranking]=await Promise.all([
       query<ExportRow>(`SELECT sub.id AS submission_id,sub.submission_number,sub.display_name AS artist,u.id AS judge_id,u.name AS judge,
